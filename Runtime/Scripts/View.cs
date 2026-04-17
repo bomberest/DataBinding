@@ -97,14 +97,28 @@ namespace JH.DataBinding
         private void BindBindingDataSources(object bindingDataSource)
         {
             foreach (var binding in componentPropertyBindings)
-            {
-                binding.DataSource = bindingDataSource;
-            }
-
-            foreach (var binding in containerPropertyBindings)
-            {
-                binding.DataSource = bindingDataSource;
-            }
+                        {
+                            try
+                            {
+                                binding.DataSource = bindingDataSource;
+                            }
+                            catch (Exception e)
+                            {
+                                UnityEngine.Debug.LogException(e, this);
+                            }
+                        }
+            
+                        foreach (var binding in containerPropertyBindings)
+                        {
+                            try
+                            {
+                                binding.DataSource = bindingDataSource;
+                            }
+                            catch (Exception e)
+                            {
+                                UnityEngine.Debug.LogException(e, this);
+                            }
+                        }
         }
 
         private void UpdateBindings()
