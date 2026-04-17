@@ -163,7 +163,7 @@ namespace JH.DataBinding
 
             if (propertyInfo == null)
             {
-                throw new InvalidOperationException($"Failed to resolve property path {path}.");
+                throw new InvalidOperationException($"Failed to resolve property path {path}. Model type: {instance.GetType().Name}");
             }
 
             switch (operation)
