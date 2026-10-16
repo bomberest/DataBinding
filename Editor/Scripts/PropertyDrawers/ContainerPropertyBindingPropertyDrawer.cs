@@ -84,12 +84,18 @@ namespace JH.DataBinding.Editor
                         .PropertyType.GetTypeInfo()
                         .GetFriendlyName();
 
+                    var templateName = binding.ViewSelector != null
+                        ? binding.ViewSelector.name
+                        : DataBindingCommonData.HasViewProviderElements(sourceProperty.PropertyType)
+                            ? nameof(IViewProvider)
+                            : binding.ElementTemplate != null ? binding.ElementTemplate.name : "";
+
                     var condensedLabelString = string.Format(
                         displayText.ContainerPropertyBindingCondensedLabelFormat_Type_Source_Target_Template,
                         friendlySourceTypeName,
                         binding.SourcePath,
                         binding.TargetContainer.name,
-                        binding.ElementTemplate.name
+                        templateName
                     );
 
                     return condensedLabelString;

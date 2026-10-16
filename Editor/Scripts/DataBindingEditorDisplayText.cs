@@ -11,7 +11,7 @@ namespace JH.DataBinding.Editor
             "Please specify an element template with a View component";
 
         public string BindingElementTemplateMissingMessageText =>
-            "Please specify an element template ( == a prefab with a View component)";
+            "Assign an element template or ViewSelector, or use items implementing IViewProvider";
 
         public string BindingMissingDataSourceAssignment =>
             "Assign a DataSource to the hosting view.";

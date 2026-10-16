@@ -54,7 +54,6 @@ We assume you completed the "Getting Started" tutorial and have a basic understa
 
     ![CharacterViewSetup - Run](Images/ALookAtContainerBindings/CharacterViewSetup.01.png)
 
-    
 ## Binding the Charcter View to display Attributes
 
 Attributes are for Characters pretty much what Characters are for the Party. There is a 1:n relation of Characters:Attributes. Characters *'contain'* Attributes. So we go create a ContainerBinding:
@@ -66,4 +65,59 @@ Attributes are for Characters pretty much what Characters are for the Party. The
 - Drag the **Attribute View** prefab into the **Element Template** input are.
 - Click Play and you should see the final result.
 
+## Choosing a prefab for each item
 
+Container bindings resolve a `View` prefab in this order:
+
+1. `ViewSelector.SelectView(item)`, when a selector is assigned to the binding.
+2. `IViewProvider.ViewPrefab`, when the item implements `IViewProvider`.
+3. The binding's existing `ElementTemplate`.
+
+A null result falls through to the next option. `ElementTemplate` can be left empty
+if the selector or providers supply a prefab for every item. If none supplies a
+prefab, the binding logs an error and leaves the container unchanged for that update.
+These APIs return prefab references; the binding creates and destroys the instances.
+
+Implement `IViewProvider` on an item model to provide its prefab directly:
+
+```csharp
+using JH.DataBinding;
+
+public class CharacterItem : DataSourceBase<CharacterItem>, IViewProvider
+{
+    public View ViewPrefab { get; set; }
+    public string Name { get; set; }
+}
+```
+
+For selection configured independently of the model, derive from `ViewSelector`
+(`MonoBehaviour`, implementing `IViewSelector`) and add your component to a
+GameObject. Assign that component to the container binding's **View Selector**
+field in the Inspector:
+
+```csharp
+using JH.DataBinding;
+using UnityEngine;
+
+public class CharacterViewSelector : ViewSelector
+{
+    [SerializeField] private View characterPrefab;
+
+    public override View SelectView(INotifyDataSourceChanged dataSource)
+    {
+        return dataSource is CharacterItem ? characterPrefab : null;
+    }
+}
+```
+
+The selector takes priority even when an item implements `IViewProvider`. The
+Inspector recognizes provider-only bindings when the declared collection element
+type implements `IViewProvider`; for heterogeneous collections declared using a
+base type, assign a selector or fallback template for editor validation.
+
+Each update reuses child views whose resolved prefab has not changed and replaces
+views whose prefab has changed, keeping list order. Pre-populated children remain
+supported for fixed-template bindings; dynamic selection replaces untracked children
+because their original prefab is unknown. After changing an item's prefab or selector
+inputs, notify the parent data source with `NotifyChanges(...)` to update the container.
+The container does not subscribe to individual item notifications.

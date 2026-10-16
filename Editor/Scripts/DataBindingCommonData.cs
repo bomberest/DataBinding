@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -223,7 +224,9 @@ namespace JH.DataBinding.Editor
                 return (ContainerPropertyBindingState.TargetUnbound, bindableDataSourceProperties);
             }
 
-            if (binding.ElementTemplate == null)
+            if (binding.ElementTemplate == null
+                && binding.ViewSelector == null
+                && !HasViewProviderElements(sourceProperty.PropertyType))
             {
                 return (
                     ContainerPropertyBindingState.ElementTemplateMissing,
@@ -231,7 +234,8 @@ namespace JH.DataBinding.Editor
                 );
             }
 
-            if (binding.ElementTemplate.GetComponent<View>() == null)
+            if (binding.ElementTemplate != null
+                && binding.ElementTemplate.GetComponent<View>() == null)
             {
                 return (
                     ContainerPropertyBindingState.ElementTemplateIsNotAssignable,
@@ -240,6 +244,15 @@ namespace JH.DataBinding.Editor
             }
 
             return (ContainerPropertyBindingState.Complete, bindableDataSourceProperties);
+        }
+
+        internal static bool HasViewProviderElements(Type collectionType)
+        {
+            return collectionType.GetInterfaces().Concat(new[] { collectionType }).Any(type =>
+                type.IsGenericType
+                && type.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+                && typeof(IViewProvider).IsAssignableFrom(type.GetGenericArguments()[0])
+            );
         }
 
         internal static PropertyInfo[] GetBindableDataSourceProperties(Type dataSourceType)
