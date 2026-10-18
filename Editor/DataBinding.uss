@@ -11,8 +11,21 @@
     align-items: center;
 }
 .db-field-label {
-    min-width: 70px;
+    width: 136px;
     flex-shrink: 0;
+}
+.db-script > .unity-base-field__label {
+    min-width: 136px;
+    width: 136px;
+}
+.db-field > .unity-base-field__label {
+    min-width: 112px;
+    width: 112px;
+    flex-shrink: 0;
+}
+.db-field > .unity-base-field__input {
+    min-width: 0;
+    flex-shrink: 1;
 }
 .db-model-button {
     flex-grow: 1;
@@ -25,30 +38,41 @@
 }
 .db-model-context {
     margin-top: 3px;
-    margin-left: 72px;
+    margin-left: 138px;
     font-size: 11px;
     white-space: normal;
     color: var(--unity-colors-label-text);
     opacity: 0.75;
 }
 .db-collection {
-    margin-top: 5px;
+    margin-top: 8px;
     margin-bottom: 4px;
 }
-.db-collection > .unity-foldout > .unity-foldout__toggle {
+.db-collection-foldout > .unity-foldout__toggle {
     -unity-font-style: bold;
-    margin-bottom: 3px;
+    margin-left: 0;
+    margin-right: 28px;
+    margin-bottom: 5px;
+    min-height: 22px;
+}
+.db-collection-foldout > .unity-foldout__content {
+    margin-left: 0;
+    padding-left: 0;
 }
 .db-empty {
     margin-top: 3px;
     margin-bottom: 3px;
-    margin-left: 4px;
+    margin-left: 18px;
     opacity: 0.65;
 }
 .db-add-binding {
-    align-self: flex-start;
-    margin-top: 4px;
-    margin-bottom: 3px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 22px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 .db-binding-row {
     border-width: 1px;
@@ -57,22 +81,42 @@
     margin-bottom: 4px;
     padding-top: 3px;
     padding-bottom: 4px;
-    padding-left: 2px;
-    padding-right: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
 }
 .db-binding-foldout > .unity-foldout__toggle {
-    margin-right: 25px;
+    margin-left: 0;
+    margin-right: 26px;
+    min-height: 20px;
+}
+.db-binding-foldout > .unity-foldout__toggle > .unity-toggle__input {
+    min-width: 0;
+    flex-shrink: 1;
+}
+.db-binding-foldout > .unity-foldout__toggle .unity-toggle__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .db-binding-actions {
     position: absolute;
-    top: 1px;
-    right: 2px;
-    width: 24px;
+    top: 3px;
+    right: 4px;
+    width: 22px;
+    height: 20px;
+    padding-left: 0;
+    padding-right: 0;
     border-width: 0;
     background-color: rgba(0, 0, 0, 0);
 }
+.db-binding-actions > .unity-text-element {
+    flex-grow: 1;
+    -unity-text-align: middle-center;
+}
 .db-binding-foldout > .unity-foldout__content {
-    margin-left: 9px;
+    margin-left: 0;
+    padding-left: 18px;
 }
 .db-secondary {
     font-size: 11px;

@@ -41,7 +41,7 @@ Null results fall through to the next option. The inspector displays this priori
 Dynamic prefab selection is evaluated at runtime; a configured binding does not
 guarantee that every future model will provide a prefab.
 
-Use **+ Add Binding** to create a blank entry. Each entry's menu offers **Move Up**,
+Use **+** in a section header to create a blank entry. Each entry's menu offers **Move Up**,
 **Move Down**, **Duplicate**, and **Remove**. These operations support Undo.
 
 The updated labels do not rename serialized fields or change runtime binding APIs.

@@ -24,12 +24,12 @@ namespace JH.DataBinding.Editor
       foldout.Add(BindingInspectorFields.Secondary(
         $"{sourceType?.GetFriendlyName() ?? "Collection binding"} · {viewSource}"));
       foldout.Add(BindingInspectorFields.Source(property.FindPropertyRelative("sourcePath"), true));
-      foldout.Add(BindingInspectorFields.Property(property, "targetContainer", "Container"));
+      foldout.Add(BindingInspectorFields.ObjectProperty(property, "targetContainer", "Container", typeof(UnityEngine.Transform)));
       var section = new Label("View Selection");
       section.AddToClassList("db-field-section");
       foldout.Add(section);
-      foldout.Add(BindingInspectorFields.Property(property, "viewSelector", "Selector"));
-      foldout.Add(BindingInspectorFields.Property(property, "elementTemplate", "Default Prefab"));
+      foldout.Add(BindingInspectorFields.ObjectProperty(property, "viewSelector", "Selector", typeof(ViewSelector)));
+      foldout.Add(BindingInspectorFields.ObjectProperty(property, "elementTemplate", "Default Prefab", typeof(View)));
       var priority = BindingInspectorFields.Secondary("Selector → Model → Default Prefab");
       priority.tooltip = "A null result falls through to the next option. The selector has priority over IViewProvider.";
       foldout.Add(priority);

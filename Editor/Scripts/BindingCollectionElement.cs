@@ -20,12 +20,14 @@ namespace JH.DataBinding.Editor
       this.title = title;
       AddToClassList("db-collection");
       section = new Foldout { value = true, viewDataKey = path + "-section" };
+      section.AddToClassList("db-collection-foldout");
       Add(section);
       rows = new VisualElement();
       section.Add(rows);
-      var add = new Button(AddBinding) { text = "+ Add Binding", name = "add-" + path };
+      var add = new Button(AddBinding)
+        { text = "+", name = "add-" + path, tooltip = "Add binding" };
       add.AddToClassList("db-add-binding");
-      section.Add(add);
+      Add(add);
       this.TrackSerializedObjectValue(serialized, _ =>
       {
         if (serialized.targetObject != null && serialized.FindProperty(path).arraySize != lastCount)
@@ -44,6 +46,7 @@ namespace JH.DataBinding.Editor
         ? (object)new ComponentPropertyBinding() : new ContainerPropertyBinding();
       item.isExpanded = true;
       serialized.ApplyModifiedProperties();
+      section.value = true;
       Rebuild();
     }
 
@@ -70,6 +73,7 @@ namespace JH.DataBinding.Editor
         row.Add(property);
         var actions = new ToolbarMenu { text = "⋮", tooltip = "Move, duplicate or remove binding" };
         actions.AddToClassList("db-binding-actions");
+        actions.Q(className: ToolbarMenu.arrowUssClassName)?.AddToClassList("db-hidden");
         var itemIndex = index;
         actions.menu.AppendAction("Move Up", _ => Move(itemIndex, itemIndex - 1),
           itemIndex > 0 ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);

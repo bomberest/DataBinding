@@ -57,7 +57,7 @@ namespace JH.DataBinding.Editor
         choices.Add(property.stringValue);
       var field = new DropdownField(label, choices,
         string.IsNullOrEmpty(property.stringValue) ? 0 : choices.IndexOf(property.stringValue));
-      field.AddToClassList("unity-base-field__aligned");
+      field.AddToClassList("db-field");
       field.SetEnabled(enabled);
       field.RegisterValueChangedCallback(evt =>
       {
@@ -76,7 +76,7 @@ namespace JH.DataBinding.Editor
         allowSceneObjects = true,
         value = property.objectReferenceValue,
       };
-      field.AddToClassList("unity-base-field__aligned");
+      field.AddToClassList("db-field");
       field.RegisterValueChangedCallback(evt =>
       {
         property.objectReferenceValue = evt.newValue;
@@ -103,7 +103,7 @@ namespace JH.DataBinding.Editor
       var choices = new List<string> { "— Select —" };
       choices.AddRange(candidates.Select(component => ComponentLabel(component, target?.transform)));
       var field = new DropdownField("Component", choices, candidates.IndexOf(current) + 1);
-      field.AddToClassList("unity-base-field__aligned");
+      field.AddToClassList("db-field");
       field.SetEnabled(target != null && sourceType != null);
       field.RegisterValueChangedCallback(evt =>
       {
@@ -145,10 +145,16 @@ namespace JH.DataBinding.Editor
           .Select(x => x.Name), component != null && sourceType != null);
     }
 
-    internal static PropertyField Property(SerializedProperty parent, string name, string label)
+    internal static ObjectField ObjectProperty(SerializedProperty parent, string name, string label, Type objectType)
     {
       var property = parent.FindPropertyRelative(name);
-      var field = new PropertyField(property, label);
+      var field = new ObjectField(label)
+      {
+        objectType = objectType,
+        allowSceneObjects = true,
+        value = property.objectReferenceValue,
+      };
+      field.AddToClassList("db-field");
       field.BindProperty(property);
       return field;
     }

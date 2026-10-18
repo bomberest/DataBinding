@@ -230,6 +230,93 @@ namespace JH.DataBinding.Editor.Tests
       Assert.AreEqual("Value", view.componentPropertyBindings[0].SourcePath);
       LogAssert.NoUnexpectedReceived();
     }
+
+    [UnityTest] public IEnumerator BindingLayoutKeepsCompactColumnsAndControlsInsideCards()
+    {
+      if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+        Assert.Ignore("Inspector layout validation requires a graphics device.");
+      var property = PropertyBinding();
+      var component = obj.AddComponent<InspectorProbeComponent>();
+      property.FindPropertyRelative("sourcePath").stringValue = "Value";
+      property.FindPropertyRelative("targetGameObject").objectReferenceValue = obj;
+      property.FindPropertyRelative("targetComponent").objectReferenceValue = component;
+      property.FindPropertyRelative("targetPath").stringValue = "Value";
+      serialized.ApplyModifiedProperties();
+      view.containerPropertyBindings = new[] { new ContainerPropertyBinding
+        { SourcePath = "Items", TargetContainer = obj.transform } };
+      serialized.Update();
+      foreach (var name in new[] { "componentPropertyBindings", "containerPropertyBindings" })
+        serialized.FindProperty(name).GetArrayElementAtIndex(0).isExpanded = true;
+      editor = UnityEditor.Editor.CreateEditor(view);
+      var root = ((ViewEditor)editor).CreateInspectorGUI();
+      window = ScriptableObject.CreateInstance<EditorWindow>();
+      window.Show();
+      window.rootVisualElement.Add(root);
+      root.Bind(serialized);
+      foreach (var width in new[] { 320, 680 })
+      {
+        window.position = new Rect(100, 100, width, 740);
+        yield return null;
+        yield return null;
+        var fields = root.Query<VisualElement>(className: "db-field").ToList();
+        Assert.AreEqual(8, fields.Count);
+        var inputs = fields.Select(field => field.Q(className: "unity-base-field__input")).ToList();
+        foreach (var input in inputs)
+        {
+          Assert.That(input.worldBound.x - root.worldBound.x, Is.InRange(125f, 165f),
+            $"Input column should remain compact at width {width}");
+          Assert.Greater(input.worldBound.width, 120f, $"Usable input width at {width}");
+          Assert.LessOrEqual(input.worldBound.xMax, root.worldBound.xMax + 1f);
+        }
+        Assert.Less(inputs.Max(x => x.worldBound.x) - inputs.Min(x => x.worldBound.x), 1f);
+        var model = root.Q<Button>("chooseModel");
+        Assert.GreaterOrEqual(model.worldBound.width, 50f);
+        Assert.LessOrEqual(model.parent.worldBound.xMax, root.worldBound.xMax);
+        foreach (var button in model.parent.Query<Button>().ToList())
+          Assert.LessOrEqual(button.worldBound.xMax, root.worldBound.xMax);
+        foreach (var row in root.Query<VisualElement>(className: "db-binding-row").ToList())
+        {
+          var foldout = row.Q<Foldout>();
+          var toggle = foldout.Q<Toggle>();
+          var actions = row.Q<ToolbarMenu>();
+          Assert.GreaterOrEqual(toggle.worldBound.xMin, row.worldBound.xMin);
+          Assert.GreaterOrEqual(toggle.Q(className: "unity-toggle__checkmark").worldBound.xMin,
+            row.worldBound.xMin);
+          Assert.LessOrEqual(toggle.worldBound.xMax, actions.worldBound.xMin);
+          Assert.LessOrEqual(actions.worldBound.xMax, row.worldBound.xMax);
+          Assert.AreEqual(DisplayStyle.None,
+            actions.Q(className: ToolbarMenu.arrowUssClassName).resolvedStyle.display);
+        }
+        foreach (var section in root.Query<BindingCollectionElement>().ToList())
+        {
+          var add = section.Q<Button>(className: "db-add-binding");
+          Assert.Less(add.worldBound.yMax, section.worldBound.yMin + 26f);
+          Assert.LessOrEqual(add.worldBound.xMax, section.worldBound.xMax);
+        }
+      }
+      LogAssert.NoUnexpectedReceived();
+    }
+
+    [UnityTest] public IEnumerator CollectionObjectFieldsSupportAssignmentAndUndo()
+    {
+      if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+        Assert.Ignore("Interactive field validation requires a graphics device.");
+      view.dataSourceType.Type = typeof(InspectorModels.MainModel);
+      view.containerPropertyBindings = new[] { new ContainerPropertyBinding { SourcePath = "Items" } };
+      serialized.Update();
+      var property = serialized.FindProperty("containerPropertyBindings").GetArrayElementAtIndex(0);
+      var field = BindingInspectorFields.ObjectProperty(property, "targetContainer", "Container", typeof(Transform));
+      window = ScriptableObject.CreateInstance<EditorWindow>();
+      window.Show();
+      window.rootVisualElement.Add(field);
+      yield return null;
+      Undo.IncrementCurrentGroup();
+      field.value = obj.transform;
+      Assert.AreSame(obj.transform, view.containerPropertyBindings[0].TargetContainer);
+      Undo.PerformUndo();
+      serialized.Update();
+      Assert.IsNull(view.containerPropertyBindings[0].TargetContainer);
+    }
   }
 }
 namespace PickerAlpha { public class Model : JH.DataBinding.DataSourceBase<Model> { } }

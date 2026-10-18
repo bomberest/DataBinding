@@ -21,7 +21,13 @@ namespace JH.DataBinding.Editor
         root.Add(new HelpBox("Select one View to edit model and binding configuration.", HelpBoxMessageType.Info));
         return root;
       }
-      var script = new PropertyField(serializedObject.FindProperty("m_Script"));
+      var script = new ObjectField("Script")
+      {
+        objectType = typeof(MonoScript),
+        value = MonoScript.FromMonoBehaviour((View)target),
+        allowSceneObjects = false,
+      };
+      script.AddToClassList("db-script");
       script.SetEnabled(false);
       root.Add(script);
       root.Add(new PropertyField(serializedObject.FindProperty(nameof(View.dataSourceType))));
