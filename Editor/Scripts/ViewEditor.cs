@@ -1,56 +1,46 @@
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace JH.DataBinding.Editor
 {
   [CustomEditor(typeof(View), true)]
+  [CanEditMultipleObjects]
   public class ViewEditor : UnityEditor.Editor
   {
-    private View view;
-    private VisualElement editorRootElement;
-
-    public virtual void OnEnable()
-    {
-      view = target as View;
-
-      if (view.dataSourceType?.Type == null)
-      {
-        var guessedDataSourceType = DataBindingCommonData.GuessDataSourceTypeName(view.name);
-
-        if (guessedDataSourceType != null)
-        {
-          Debug.Log(
-            $"Guessing {guessedDataSourceType.Name} as data source type for view {view.name}."
-          );
-
-          view.dataSourceType.Type = guessedDataSourceType;
-          serializedObject.ApplyModifiedProperties();
-          serializedObject.Update();
-          EditorUtility.SetDirty(view);
-        }
-      }
-    }
+    public virtual void OnEnable() { }
 
     public override VisualElement CreateInspectorGUI()
     {
-      editorRootElement = new VisualElement();
-      editorRootElement.styleSheets.Add(DataBindingEditorStyle.StyleSheet);
-
-      InspectorElement.FillDefaultInspector(editorRootElement, serializedObject, this);
-
-      var dataSourceTypeProperty = serializedObject.FindProperty(nameof(View.dataSourceType));
-
-      editorRootElement.TrackSerializedObjectValue(
-        serializedObject,
-        x =>
+      var root = new VisualElement();
+      root.AddToClassList("db-inspector");
+      if (DataBindingEditorStyle.StyleSheet != null)
+        root.styleSheets.Add(DataBindingEditorStyle.StyleSheet);
+      if (serializedObject.isEditingMultipleObjects)
+      {
+        root.Add(new HelpBox("Select one View to edit model and binding configuration.", HelpBoxMessageType.Info));
+        return root;
+      }
+      var script = new PropertyField(serializedObject.FindProperty("m_Script"));
+      script.SetEnabled(false);
+      root.Add(script);
+      root.Add(new PropertyField(serializedObject.FindProperty(nameof(View.dataSourceType))));
+      root.Add(new BindingCollectionElement(serializedObject,
+        nameof(View.componentPropertyBindings), "Property Bindings"));
+      root.Add(new BindingCollectionElement(serializedObject,
+        nameof(View.containerPropertyBindings), "Collection Bindings"));
+      var iterator = serializedObject.GetIterator();
+      if (iterator.NextVisible(true))
+      {
+        do
         {
-          editorRootElement.Bind(x);
-        }
-      );
-
-      return editorRootElement;
+          if (iterator.name == "m_Script" || iterator.name == nameof(View.dataSourceType)
+            || iterator.name == nameof(View.componentPropertyBindings)
+            || iterator.name == nameof(View.containerPropertyBindings)) continue;
+          root.Add(new PropertyField(iterator.Copy()));
+        } while (iterator.NextVisible(false));
+      }
+      return root;
     }
   }
 }

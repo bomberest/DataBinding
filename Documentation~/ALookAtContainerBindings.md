@@ -41,10 +41,10 @@ We assume you completed the "Getting Started" tutorial and have a basic understa
   
   ![PartyViewSetup](Images/ALookAtContainerBindings/PartyViewSetup.01.png)
 
-- Now add a new Binding by clicking the **Add Binding** button in the **Container Property Bindings** section of your Inspector window.
-- Select the **SourcePath** property to bind to the Characters property of your PartyViewModel. The editor will limit your choices to **IEnumerable** properties only. After all: This is a Container, so we expect it to hold Elements in a 1:n relationship. If we were to bind a 1:1 relationship, a Component Property Binding would do.
-- As **Target Container** select the Characters GameObject from your Hierarchy (It is already set up to show a Grid for our purpose).
-- Now finally, as we are binding 1:n, we have to supply an **Elememnt Template** that will be used to represent each element of the IEnumerable property in the scene. To do this, drag the **Character View** prefab into the **Element Template** binding input area. *(Hint: You can find the **Character View** prefab right next to the **Party View** prefab that you are current editing. If not you maybe have the Party V filter still active.*)
+- Now add a new Binding by clicking the **Add Binding** button in the **Collection Bindings** section of your Inspector window.
+- Select the **Items Source** property to bind to the Characters property of your PartyViewModel. The editor will limit your choices to **IEnumerable** properties only. After all: This is a Container, so we expect it to hold Elements in a 1:n relationship. If we were to bind a 1:1 relationship, a Component Property Binding would do.
+- As **Container** select the Characters GameObject from your Hierarchy (It is already set up to show a Grid for our purpose).
+- Now finally, as we are binding 1:n, we have to supply an **Default Prefab** that will be used to represent each element of the IEnumerable property in the scene. To do this, drag the **Character View** prefab into the **Default Prefab** binding input area. *(Hint: You can find the **Character View** prefab right next to the **Party View** prefab that you are current editing. If not you maybe have the Party V filter still active.*)
 
 - If you click run now you should be a scene like this:
 
@@ -60,9 +60,9 @@ Attributes are for Characters pretty much what Characters are for the Party. The
 
   ![CharacterViewSetup - Run](Images/ALookAtContainerBindings/CharacterViewSetup.02.png)
 
-- Select the **Attributes** property of the CharacterViewModel as **Source Path** of the Binding.
-- Drag the **Attributes** GameObject into the **Target Container** inputArea. (*Hint: Just as with **Character View**s the **Attribute** GameObject is properly set up as Grid already.*)
-- Drag the **Attribute View** prefab into the **Element Template** input are.
+- Select the **Attributes** property of the CharacterViewModel as **Items Source** of the Binding.
+- Drag the **Attributes** GameObject into the **Container** inputArea. (*Hint: Just as with **Character View**s the **Attribute** GameObject is properly set up as Grid already.*)
+- Drag the **Attribute View** prefab into the **Default Prefab** input are.
 - Click Play and you should see the final result.
 
 ## Choosing a prefab for each item

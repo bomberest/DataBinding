@@ -156,7 +156,7 @@
 
 - Select the **View** GameObject and click the Add Component button.
   Type "View" into the search bar. Add a View Component.
-- Choose CubeViewDataSource as the DataSource Type for this view.
+- Choose CubeViewDataSource as the **Model** for this view.
 - On the View component add two component property bindings by clicking the Add Binding button twice.
 - Add a DynamicMaterialColor Component to the **Cube** GameObject.
 
@@ -164,16 +164,16 @@
   ![Setup02](Images/GettingStarted/ViewInspector01-2.png)
 - Now we are set to configure the two component property data bindings:
 
-  - Setup the ***Source Path*** for the first binding to be ***CubeScale***
-  - The ***Target GameObject*** will be the ***Cube*** GameObject.
-  - For the ***Target Component*** choose ***Cube::Transform***
-  - The ***Target Path*** will be ***localScale***
+  - Setup the ***Source*** for the first binding to be ***CubeScale***
+  - The ***Target Object*** will be the ***Cube*** GameObject.
+  - For the ***Component*** choose ***Cube::Transform***
+  - The ***Property*** will be ***localScale***
 
     ![Setup03](Images/GettingStarted/ViewInspector01-3.png)
-  - Setup the ***Source Path*** for the second binding to be ***CubeColor***
-  - The ***Target GameObject*** will be the ***Cube*** GameObject.
-  - For the ***Target Component*** choose ***Cube::DynamicMaterialColor***
-  - And finally the ***Target Path*** will be ***Color***
+  - Setup the ***Source*** for the second binding to be ***CubeColor***
+  - The ***Target Object*** will be the ***Cube*** GameObject.
+  - For the ***Component*** choose ***Cube::DynamicMaterialColor***
+  - And finally the ***Property*** will be ***Color***
 
     ![Setup04](Images/GettingStarted/ViewInspector01-4.png)
 

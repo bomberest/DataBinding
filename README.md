@@ -22,6 +22,8 @@ graph LR
     Template]) -.->CB
 ```
 
+[Inspector guide](Documentation~/Inspector.md): model search, property bindings, and collection view selection.
+
 ### Tutorials
 
 - [Getting Started](Documentation~/GettingStarted.md) (Detailed Step by Step Tutorial - 5 minutes to complete)

@@ -1,180 +1,140 @@
-:root {
-    --errorRed: rgb(160, 32, 32);
-    --fontSizeLarger: 104%
+.db-inspector {
+    padding-top: 2px;
+    padding-bottom: 4px;
 }
-
-.createDefaultDataSourceButton
-{
-    margin: 24px;
-    font-size: var(--fontSizeLarger);
-    white-space: normal;
+.db-model {
+    margin-top: 6px;
+    margin-bottom: 8px;
 }
-
-.dataSourceSelectionButton
-{
-    min-width: 64px;
-    min-height: 22px;
-}
-
-.dataSourceSelectionButtonGroup
-{
-    flex-grow: 0;
+.db-model-row {
     flex-direction: row;
-    justify-content: flex-end;
+    align-items: center;
 }
-
-.dataSourceFilterInput
-{
+.db-field-label {
+    min-width: 70px;
+    flex-shrink: 0;
+}
+.db-model-button {
     flex-grow: 1;
     flex-shrink: 1;
-    margin-right : 4px;
+    min-width: 50px;
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
-.dataSourceSelectionDataSourceDropDown
-{
-    flex-grow: 1;
-    flex-shrink: 1;
-    margin-right : 4px;
-}
-
-.dataSourceSelectionFilterSection
-{
-    font-size: var(--fontSizeLarger);
-    margin-top: 4px;
-    flex-direction: Row;
-    flex-wrap: NoWrap;
-    justify-content: space-between;
-}
-
-.dataSourceSelectionSelectionSection
-{
-    font-size: var(--fontSizeLarger);
-    margin-top: 4px;
-    flex-direction: Row;
-    flex-wrap: NoWrap;
-    justify-content: space-between;
-}
-
-.errorMessageContainer {
-    flex-grow: 0;
-    padding: 8px;
-    margin: 8px;
-    border-color: var(--errorRed);
-    border-radius: 8px;
-    border-width: 2px;
-}
-
-.errorMessageText {
-    font-size: var(--fontSizeLarger);
+.db-model-context {
+    margin-top: 3px;
+    margin-left: 72px;
+    font-size: 11px;
     white-space: normal;
+    color: var(--unity-colors-label-text);
+    opacity: 0.75;
 }
-
-/* .viewEditor {
-
-}
-
-.genericRow {
-    flex-direction: row;
-    justify-content: space-between;
-}
-
-.successText {
-    font-size: 14px;
-    color: green;
-    white-space: normal;
-}
-
-.errorText {
-    margin: 4px;    
-    color: rgb(192, 32, 32);
-    font-size: 14px;
-    white-space: normal;
-}
-
-.infoText {
-    font-size: 12px;
-    white-space: normal;
-}
-
-.invalidBinding {
-    margin: 8px;
-    background-color: red;
-}
-
-.bindingDataSourceTypeLabel {
-    font-size: 14px;
-}
-
-.bindingGroup {
-    padding-top: 4px;
-}
-
-.bindingGroupList {
-    margin-top: 4px;
+.db-collection {
+    margin-top: 5px;
     margin-bottom: 4px;
-
-    padding: 2px;
-
-
+}
+.db-collection > .unity-foldout > .unity-foldout__toggle {
+    -unity-font-style: bold;
+    margin-bottom: 3px;
+}
+.db-empty {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    margin-left: 4px;
+    opacity: 0.65;
+}
+.db-add-binding {
+    align-self: flex-start;
+    margin-top: 4px;
+    margin-bottom: 3px;
+}
+.db-binding-row {
     border-width: 1px;
-    border-radius: 4px;
-    border-color: rgb(0, 0, 0);
+    border-color: var(--unity-colors-default-border);
+    border-radius: 3px;
+    margin-bottom: 4px;
+    padding-top: 3px;
+    padding-bottom: 4px;
+    padding-left: 2px;
+    padding-right: 4px;
 }
-
-.bindingGroupHeader {
-    flex-direction: row;
-    justify-content: space-between;
+.db-binding-foldout > .unity-foldout__toggle {
+    margin-right: 25px;
 }
-
-.bindingGroupLabel {
-    -unity-text-align: middle-left;
-    margin-left: 1px;
-    margin-right: 1px;
-    margin-top: 1px;
-    margin-bottom: 1px;
-    font-size: 14px;
-}
-
-.bindingActionButton {
-    margin: 0px;
+.db-binding-actions {
+    position: absolute;
+    top: 1px;
+    right: 2px;
     width: 24px;
-    height: 18px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
 }
-
-.addBindingActionButton {
-    margin: 0px;
-    height: 18px;
+.db-binding-foldout > .unity-foldout__content {
+    margin-left: 9px;
 }
-
-.bindingContainer
-{
-    flex-direction: column;
-    margin: 1px;
-    
-    border-width: 1px;
-    border-radius: 2px;
-    border-color: rgb(64, 64, 64);
-
+.db-secondary {
+    font-size: 11px;
+    opacity: 0.75;
+    margin-top: 2px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
-.bindingHeaderRow{
-    padding: 2px;
+.db-field-section {
+    -unity-font-style: bold;
+    font-size: 11px;
+    margin-top: 7px;
+    margin-bottom: 3px;
+}
+.db-binding-foldout .unity-help-box {
+    margin-top: 5px;
+    margin-bottom: 2px;
+}
+.db-type-picker {
+    padding-top: 8px;
+    padding-right: 8px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+}
+.db-section-title {
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+.db-type-search {
+    flex-shrink: 0;
+    margin-bottom: 4px;
+}
+.db-type-results {
+    flex-grow: 1;
+    min-height: 80px;
+    margin-top: 3px;
+    margin-bottom: 5px;
+}
+.db-type-option {
+    padding-top: 5px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+.db-type-option > .unity-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.db-picker-footer {
     flex-direction: row;
-    flex-wrap: wrap;
-
-    background-color: var(--unity-colors-app_toolbar_button-background-hover);
+    flex-shrink: 0;
+    margin-top: 4px;
 }
-
-.bindingInteractionButtonContainer {
-    flex-direction: row;
+.db-flex {
+    flex-grow: 1;
 }
-
-.condensedBindingLabel {
-    -unity-text-align: middle-left;
-    white-space: normal;
-    margin:2px;
+.db-picker-empty {
+    margin-top: 6px;
+    margin-bottom: 6px;
 }
-
-.bindingProperty{
-    margin-right: 2px;
-} */
+.db-hidden {
+    display: none;
+}

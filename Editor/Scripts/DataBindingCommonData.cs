@@ -22,21 +22,16 @@ namespace JH.DataBinding.Editor
         internal static readonly IDataBindingEditorDisplayText EditorDisplayText =
             new DataBindingEditorDisplayText();
 
+        private static Type[] cachedDataSourceTypes;
+
         internal static Type[] GetValidDataSourceTypes()
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            bool DataSourceFilterFunc(Type x) =>
-                !x.IsAbstract
-                && !x.IsGenericType
-                && !x.IsInterface
-                && x.InheritsOrImplements(typeof(INotifyDataSourceChanged));
-
-            return assemblies
-                .Where(x => !x.IsDynamic)
-                .SelectMany(x => x.ExportedTypes)
-                .Where(DataSourceFilterFunc)
-                .OrderBy(x => x.GetFriendlyName())
+            return cachedDataSourceTypes ??= TypeCache
+                .GetTypesDerivedFrom<INotifyDataSourceChanged>()
+                .Where(x => x.IsVisible && !x.IsAbstract && !x.ContainsGenericParameters && !x.IsInterface)
+                .OrderBy(x => x.GetFriendlyName(), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x.FullName, StringComparer.Ordinal)
+                .ThenBy(x => x.Assembly.FullName, StringComparer.Ordinal)
                 .ToArray();
         }
 
@@ -51,31 +46,13 @@ namespace JH.DataBinding.Editor
 
         internal static string FindDataSourceSourceFile(Type type)
         {
-            var assetGuid = AssetDatabase.FindAssets(type.Name).FirstOrDefault();
-
-            if (assetGuid == null)
-            {
-                var allSourceFiles = Directory.GetFiles(
-                    Application.dataPath,
-                    "*.cs",
-                    SearchOption.AllDirectories
-                );
-
-                var sourceFile = allSourceFiles.FirstOrDefault(x =>
-                    File.ReadAllText(x).Contains($"class {type.Name}")
-                );
-
-                var assetName = Path.GetFileNameWithoutExtension(sourceFile);
-
-                assetGuid = AssetDatabase.FindAssets(assetName).FirstOrDefault();
-            }
-
-            if (assetGuid != null)
-            {
-                return AssetDatabase.GUIDToAssetPath(assetGuid);
-            }
-
-            return null;
+            if (type == null) return null;
+            while (type.DeclaringType != null) type = type.DeclaringType;
+            var candidates = AssetDatabase.FindAssets($"{type.Name} t:MonoScript")
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(path => new { path, script = AssetDatabase.LoadAssetAtPath<MonoScript>(path) })
+                .Where(x => x.script != null);
+            return candidates.FirstOrDefault(x => x.script.GetClass() == type)?.path;
         }
 
         internal static (
@@ -94,7 +71,7 @@ namespace JH.DataBinding.Editor
                 );
             }
 
-            return DetermineComponentPropertyBindingState(binding, view.dataSourceType.Type);
+            return DetermineComponentPropertyBindingState(binding, view.dataSourceType?.Type);
         }
 
         internal static (
@@ -128,9 +105,7 @@ namespace JH.DataBinding.Editor
                 );
             }
 
-            var sourceProperty = bindableDataSourceProperties.FirstOrDefault(x =>
-                x.Name == binding.SourcePath
-            );
+            var sourceProperty = GetPathProperty(dataSourceType, binding.SourcePath);
 
             if (sourceProperty == null)
             {
@@ -141,8 +116,9 @@ namespace JH.DataBinding.Editor
                 binding.TargetComponent != null
                     ? binding
                         .TargetComponent.GetType()
-                        .GetProperties()
-                        .FirstOrDefault(x => x.Name == binding.TargetPath)
+                        .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                        .FirstOrDefault(x => x.Name == binding.TargetPath
+                            && x.GetSetMethod() != null && x.GetIndexParameters().Length == 0)
                     : null;
 
             if (targetProperty == null)
@@ -174,7 +150,7 @@ namespace JH.DataBinding.Editor
                 );
             }
 
-            return DetermineContainerPropertyBindingState(binding, view.dataSourceType.Type);
+            return DetermineContainerPropertyBindingState(binding, view.dataSourceType?.Type);
         }
 
         internal static (
@@ -210,11 +186,10 @@ namespace JH.DataBinding.Editor
                 );
             }
 
-            var sourceProperty = bindableDataSourceProperties.FirstOrDefault(x =>
-                x.Name == binding.SourcePath
-            );
+            var sourceProperty = GetPathProperty(dataSourceType, binding.SourcePath);
 
-            if (sourceProperty == null)
+            if (sourceProperty == null
+                || !typeof(IEnumerable<INotifyDataSourceChanged>).IsAssignableFrom(sourceProperty.PropertyType))
             {
                 return (ContainerPropertyBindingState.SourceUnbound, bindableDataSourceProperties);
             }
@@ -257,16 +232,17 @@ namespace JH.DataBinding.Editor
 
         internal static PropertyInfo[] GetBindableDataSourceProperties(Type dataSourceType)
         {
-            return dataSourceType.GetProperties().Where(x => x.CanRead).ToArray();
+            return dataSourceType?.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(x => x.GetGetMethod() != null && x.GetIndexParameters().Length == 0)
+                .ToArray() ?? Array.Empty<PropertyInfo>();
         }
 
         internal static PropertyInfo[] GetBindableDataSourceEnumerableProperties(
             Type dataSourceType
         )
         {
-            return dataSourceType
-                .GetProperties()
-                .Where(x => x.CanRead && typeof(IEnumerable).IsAssignableFrom(x.PropertyType))
+            return GetBindableDataSourceProperties(dataSourceType)
+                .Where(x => typeof(IEnumerable<INotifyDataSourceChanged>).IsAssignableFrom(x.PropertyType))
                 .ToArray();
         }
 
@@ -275,13 +251,29 @@ namespace JH.DataBinding.Editor
             Type sourcePropertyType
         )
         {
+            if (component == null || sourcePropertyType == null) return Array.Empty<PropertyInfo>();
             var assignableProperties = component
                 .GetType()
-                .GetProperties()
-                .Where(x => x.CanWrite && x.PropertyType.IsAssignableFrom(sourcePropertyType))
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(x => x.GetSetMethod() != null && x.GetIndexParameters().Length == 0
+                    && x.PropertyType.IsAssignableFrom(sourcePropertyType))
                 .ToArray();
 
             return assignableProperties;
+        }
+
+        internal static PropertyInfo GetPathProperty(Type type, string path)
+        {
+            if (type == null || string.IsNullOrEmpty(path)) return null;
+            PropertyInfo property = null;
+            foreach (var segment in path.Split('.'))
+            {
+                property = type.GetProperty(segment, BindingFlags.Instance | BindingFlags.Public);
+                if (property?.GetGetMethod() == null || property.GetIndexParameters().Length != 0)
+                    return null;
+                type = property.PropertyType;
+            }
+            return property;
         }
 
         internal static string GetComponentDisplayName(Component component)

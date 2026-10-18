@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -10,229 +8,67 @@ namespace JH.DataBinding.Editor
   [CustomPropertyDrawer(typeof(DataSourceTypeAttribute))]
   public class DataSourceTypePropertyDrawer : PropertyDrawer
   {
-    internal static readonly IDataBindingEditorDisplayText EditorDisplayText =
-      new DataBindingEditorDisplayText();
-
-    private VisualElement rootVisualElement;
-    private VisualElement dataSourceSelectionRoot;
-    private PropertyField propertyField;
+    internal static void SetModelType(SerializedObject serialized, string path, Type type)
+    {
+      if (serialized.targetObject == null) return;
+      serialized.Update();
+      serialized.FindProperty(path).stringValue = type?.AssemblyQualifiedName ?? "";
+      serialized.ApplyModifiedProperties();
+    }
 
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
-      rootVisualElement = new();
-      FillInRoot(rootVisualElement, property);
-      return rootVisualElement;
-    }
-
-    private void FillInRoot(VisualElement root, SerializedProperty property)
-    {
-      root.Clear();
-
-      var validDataSources = DataBindingCommonData.GetValidDataSourceTypes();
-
-      if (validDataSources.Length == 0)
+      var root = new VisualElement();
+      root.AddToClassList("db-model");
+      if (DataBindingEditorStyle.StyleSheet != null)
+        root.styleSheets.Add(DataBindingEditorStyle.StyleSheet);
+      var row = new VisualElement();
+      row.AddToClassList("db-model-row");
+      var label = new Label("Model");
+      label.AddToClassList("db-field-label");
+      row.Add(label);
+      var picker = new Button { name = "chooseModel" };
+      picker.AddToClassList("db-model-button");
+      row.Add(picker);
+      var open = new Button { text = "Open", tooltip = "Open the selected model's source file" };
+      row.Add(open);
+      row.Add(new Button(() => DataBindingEditorOperations.CreateNewDataSource(
+        property.serializedObject.targetObject.name))
+        { text = "New", tooltip = "Create a model source file" });
+      root.Add(row);
+      var context = new Label();
+      context.AddToClassList("db-model-context");
+      root.Add(context);
+      var serialized = property.serializedObject;
+      var path = property.propertyPath + ".assemblyQualifiedName";
+      string sourceFile = null;
+      void Refresh()
       {
-        FillInMissingDataSource(root, property);
-        return;
+        if (serialized.targetObject == null) return;
+        var name = serialized.FindProperty(path)?.stringValue;
+        var type = string.IsNullOrEmpty(name) ? null : Type.GetType(name);
+        picker.text = type != null ? type.GetFriendlyName() + " ▾" : "Choose model… ▾";
+        picker.tooltip = type?.AssemblyQualifiedName ?? "Search class, namespace or assembly";
+        context.text = type != null ? DataSourceTypePicker.Context(type)
+          : string.IsNullOrEmpty(name) ? "Select a model to configure its bindings."
+          : "Model type is missing. Choose its replacement.";
+        sourceFile = DataBindingCommonData.FindDataSourceSourceFile(type);
+        open.SetEnabled(sourceFile != null);
       }
-
-      var filteredDataSources = validDataSources
-        .Where(x =>
-          x.GetFriendlyName()
-            .IndexOf(
-              DataBindingCommonData.dataSourceTypeInspectorFilter,
-              StringComparison.OrdinalIgnoreCase
-            ) != -1
-        )
-        .ToArray();
-
-      FillInDataSourceSelectionFilterSection(property);
-
-      dataSourceSelectionRoot = new VisualElement();
-      root.Add(dataSourceSelectionRoot);
-
-      FillInDataSourceSelectionSelectionSection(filteredDataSources, property);
-    }
-
-    private void FillInMissingDataSource(
-      VisualElement dataSourceSelectionRoot,
-      SerializedProperty property
-    )
-    {
-      var labelContainer = new VisualElement();
-      labelContainer.AddToClassList(DataBindingEditorStyle.errorMessageContainer);
-
-      var textErrorContent = new Label(
-        DataBindingCommonData.EditorDisplayText.MissingDataSourcesErrorText
-      );
-
-      textErrorContent.AddToClassList(DataBindingEditorStyle.errorMessageText);
-
-      labelContainer.Add(textErrorContent);
-
-      var createDataSourceButton = new Button(() =>
+      picker.clicked += () =>
       {
-        var dataSourceName = property.serializedObject.targetObject.name;
-        DataBindingEditorOperations.CreateNewDataSource(dataSourceName);
-
-        EditorUtility.SetDirty(property.serializedObject.targetObject);
-      });
-
-      createDataSourceButton.text = DataBindingCommonData
-        .EditorDisplayText
-        .CreateDefaultDataSourceText;
-
-      createDataSourceButton.AddToClassList(DataBindingEditorStyle.createDefaultDataSourceButton);
-
-      labelContainer.Add(createDataSourceButton);
-
-      dataSourceSelectionRoot.Add(labelContainer);
-    }
-
-    private void FillInDataSourceSelectionFilterSection(SerializedProperty property)
-    {
-      var filterSection = new VisualElement();
-      filterSection.AddToClassList(DataBindingEditorStyle.dataSourceSelectionFilterSection);
-
-      var filterInput = new TextField(
-        DataBindingCommonData.EditorDisplayText.DataSourceTypeInspectorFilterLabel
-      )
-      {
-        value = DataBindingCommonData.dataSourceTypeInspectorFilter,
-      };
-
-      filterInput.AddToClassList("unity-base-field__aligned");
-
-      filterInput.RegisterValueChangedCallback(_ =>
-      {
-        if (DataBindingCommonData.dataSourceTypeInspectorFilter != filterInput.value)
-        {
-          DataBindingCommonData.dataSourceTypeInspectorFilter = filterInput.value;
-
-          var filteredDataSources = DataBindingCommonData
-            .GetValidDataSourceTypes()
-            .Where(x =>
-              x.GetFriendlyName()
-                .IndexOf(
-                  DataBindingCommonData.dataSourceTypeInspectorFilter,
-                  StringComparison.OrdinalIgnoreCase
-                ) != -1
-            )
-            .ToArray();
-
-          FillInDataSourceSelectionSelectionSection(filteredDataSources, property);
-        }
-      });
-
-      filterInput.AddToClassList(DataBindingEditorStyle.dataSourceFilterInput);
-      filterSection.Add(filterInput);
-
-      var buttonGroup = new VisualElement();
-      buttonGroup.AddToClassList(DataBindingEditorStyle.dataSourceSelectionButtonGroup);
-
-      var newButton = new Button(() =>
-      {
-        var dataSourceName = property.serializedObject.targetObject.name;
-        DataBindingEditorOperations.CreateNewDataSource(dataSourceName);
-      })
-      {
-        text = DataBindingCommonData.EditorDisplayText.NewDataSourceText,
-        tooltip = DataBindingCommonData.EditorDisplayText.NewDataSourceTooltip,
-      };
-
-      newButton.AddToClassList(DataBindingEditorStyle.dataSourceSelectionButton);
-
-      buttonGroup.Add(newButton);
-
-      filterSection.Add(buttonGroup);
-
-      rootVisualElement.Add(filterSection);
-    }
-
-    private void FillInDataSourceSelectionSelectionSection(
-      Type[] validDataSources,
-      SerializedProperty property
-    )
-    {
-      dataSourceSelectionRoot.Clear();
-
-      if (validDataSources.Length == 0)
-      {
-        var label = new Label(DataBindingCommonData.EditorDisplayText.NoDataSourcesText);
-        label.AddToClassList(DataBindingEditorStyle.errorMessageContainer);
-
-        dataSourceSelectionRoot.Add(label);
-        return;
-      }
-
-      var selectionSection = new VisualElement();
-      selectionSection.AddToClassList(DataBindingEditorStyle.dataSourceSelectionSelectionSection);
-
-      var choices = validDataSources.Select(x => x.GetFriendlyName()).ToList();
-
-      var view = property.serializedObject.targetObject as View;
-      var currentValue = view.dataSourceType.Type.GetFriendlyName();
-      var filterConditionedDefault = choices.Contains(currentValue)
-        ? currentValue
-        : choices.FirstOrDefault();
-
-      var dataSourceDropDown = new DropdownField(
-        label: DataBindingCommonData.EditorDisplayText.DataSourceTypeText,
-        choices: choices,
-        defaultValue: filterConditionedDefault
-      );
-
-      dataSourceDropDown.AddToClassList("unity-base-field__aligned");
-      dataSourceDropDown.AddToClassList(
-        DataBindingEditorStyle.dataSourceSelectionDataSourceDropDown
-      );
-
-      dataSourceDropDown.RegisterValueChangedCallback(changeEvent =>
-      {
-        var newDataSourceType = validDataSources.FirstOrDefault(x =>
-          x.GetFriendlyName() == changeEvent.newValue
-        );
-
-        if (newDataSourceType != null)
-        {
-          var view = property.serializedObject.targetObject as View;
-
-          if (view.dataSourceType.Type != newDataSourceType)
+        var name = serialized.FindProperty(path).stringValue;
+        DataSourceTypePicker.Show(picker.worldBound,
+          string.IsNullOrEmpty(name) ? null : Type.GetType(name), type =>
           {
-            view.dataSourceType.Type = newDataSourceType;
-            property.serializedObject.ApplyModifiedProperties();
-            property.serializedObject.Update();
-            EditorUtility.SetDirty(view);
-          }
-        }
-      });
-
-      selectionSection.Add(dataSourceDropDown);
-
-      var buttonGroup = new VisualElement();
-      buttonGroup.AddToClassList(DataBindingEditorStyle.dataSourceSelectionButtonGroup);
-
-      var dataSourceSourceFile = DataBindingCommonData.FindDataSourceSourceFile(
-        view.dataSourceType.Type
-      );
-
-      var editButton = new Button(() =>
-        DataBindingEditorOperations.OpenDataSourceEditor(dataSourceSourceFile)
-      )
-      {
-        text = DataBindingCommonData.EditorDisplayText.EditDataSourceText,
-        tooltip = DataBindingCommonData.EditorDisplayText.EditDataSourceTooltip,
+            SetModelType(serialized, path, type);
+            Refresh();
+          });
       };
-
-      editButton.AddToClassList(DataBindingEditorStyle.dataSourceSelectionButton);
-
-      editButton.SetEnabled(File.Exists(dataSourceSourceFile));
-
-      buttonGroup.Add(editButton);
-
-      selectionSection.Add(buttonGroup);
-
-      dataSourceSelectionRoot.Add(selectionSection);
+      open.clicked += () => DataBindingEditorOperations.OpenDataSourceEditor(sourceFile);
+      root.TrackSerializedObjectValue(serialized, _ => Refresh());
+      Refresh();
+      return root;
     }
   }
 }

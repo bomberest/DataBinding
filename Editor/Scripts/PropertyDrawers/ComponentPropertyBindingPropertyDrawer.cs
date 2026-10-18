@@ -1,101 +1,43 @@
-using System;
-using System.Linq;
-using System.Reflection;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace JH.DataBinding.Editor
 {
-    [CustomPropertyDrawer(typeof(ComponentPropertyBinding))]
-    public class ComponentPropertyBindingPropertyDrawer : PropertyDrawer
+  [CustomPropertyDrawer(typeof(ComponentPropertyBinding))]
+  public class ComponentPropertyBindingPropertyDrawer : PropertyDrawer
+  {
+    public override VisualElement CreatePropertyGUI(SerializedProperty property) =>
+      BindingInspectorFields.Reactive(property, Build);
+
+    private static VisualElement Build(SerializedProperty property)
     {
-        internal static readonly IDataBindingEditorDisplayText EditorDisplayText =
-            new DataBindingEditorDisplayText();
-
-        private VisualElement rootVisualElement;
-        private PropertyField propertyField;
-
-        public override VisualElement CreatePropertyGUI(SerializedProperty property)
-        {
-            rootVisualElement = new();
-            rootVisualElement.name = $"ComponentPropertyBinding for {property.displayName}";
-
-            FillInRoot(rootVisualElement, property);
-            return rootVisualElement;
-        }
-
-        private void FillInRoot(VisualElement root, SerializedProperty property)
-        {
-            root.Clear();
-
-            propertyField = new PropertyField(property, MakeLabelHeaderText(property));
-            propertyField.name = nameof(ComponentPropertyBinding);
-
-            root.Add(propertyField);
-            root.MarkDirtyRepaint();
-        }
-
-        private string MakeLabelHeaderText(SerializedProperty property)
-        {
-            var (bindingState, bindableDataSourceProperties) =
-                DataBindingCommonData.DetermineComponentPropertyBindingState(property);
-
-            return MakeLabelHeaderText(
-                property.boxedValue as ComponentPropertyBinding,
-                bindingState,
-                bindableDataSourceProperties
-            );
-        }
-
-        private string MakeLabelHeaderText(
-            ComponentPropertyBinding binding,
-            ComponentPropertyBindingState bindingState,
-            PropertyInfo[] bindableDataSourceProperties
-        )
-        {
-            var displayText = DataBindingCommonData.EditorDisplayText;
-
-            switch (bindingState)
-            {
-                case ComponentPropertyBindingState.MissingDataSourceAssignment:
-                    return displayText.BindingMissingDataSourceAssignment;
-
-                case ComponentPropertyBindingState.NoBindableProperties:
-                    return displayText.BindingNoBindableProperties;
-
-                case ComponentPropertyBindingState.SourceUnbound:
-                    return displayText.BindingSourceUnboundMessageText;
-
-                case ComponentPropertyBindingState.TargetUnbound:
-                    return displayText.BindingTargetUnboundMessageText;
-
-                case ComponentPropertyBindingState.Unassignable:
-                    return displayText.BindingUnassignableMessageText;
-
-                case ComponentPropertyBindingState.Complete:
-
-                    var sourceProperty = bindableDataSourceProperties.Single(x =>
-                        x.Name == binding.SourcePath
-                    );
-
-                    var friendlySourceTypeName = sourceProperty
-                        .PropertyType.GetTypeInfo()
-                        .GetFriendlyName();
-
-                    var condensedLabelString = string.Format(
-                        displayText.ComponentPropertyBindingCondensedLabelFormat_Type_Source_Target_Component,
-                        friendlySourceTypeName,
-                        binding.SourcePath,
-                        binding.TargetComponent.name,
-                        $"{binding.TargetComponent.GetType().Name}.{binding.TargetPath}"
-                    );
-
-                    return condensedLabelString;
-
-                default:
-                    return $"Unknown {nameof(ComponentPropertyBindingState)} detected.";
-            }
-        }
+      var binding = (ComponentPropertyBinding)property.boxedValue;
+      var modelType = BindingInspectorFields.ModelType(property);
+      var (state, _) = DataBindingCommonData.DetermineComponentPropertyBindingState(binding, modelType);
+      var source = string.IsNullOrEmpty(binding.SourcePath) ? "Source" : binding.SourcePath;
+      var target = binding.TargetComponent != null
+        ? $"{binding.TargetComponent.name}.{binding.TargetPath}"
+        : "Target";
+      var foldout = BindingInspectorFields.Foldout(property, $"{source} → {target}");
+      var type = DataBindingCommonData.GetPathProperty(modelType, binding.SourcePath)?.PropertyType;
+      foldout.Add(BindingInspectorFields.Secondary(type != null
+        ? $"{type.GetFriendlyName()} · {binding.TargetComponent?.GetType().Name ?? "Choose a component"}"
+        : "Property binding"));
+      foldout.Add(BindingInspectorFields.Source(property.FindPropertyRelative("sourcePath"), false));
+      foldout.Add(BindingInspectorFields.TargetObject(property));
+      foldout.Add(BindingInspectorFields.TargetComponent(property));
+      foldout.Add(BindingInspectorFields.TargetPath(property));
+      if (state != ComponentPropertyBindingState.Complete)
+      {
+        var message = modelType == null ? "Select a model first."
+          : state == ComponentPropertyBindingState.Unassignable ? "Source and target property types do not match."
+          : state == ComponentPropertyBindingState.SourceUnbound ? "Choose a readable source property."
+          : "Choose a target component and a compatible writable property.";
+        foldout.Add(new HelpBox(message, HelpBoxMessageType.Info));
+      }
+      foldout.tooltip = state == ComponentPropertyBindingState.Complete
+        ? "Binding is configured" : "Binding needs configuration";
+      return foldout;
     }
+  }
 }
